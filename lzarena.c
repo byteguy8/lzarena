@@ -165,6 +165,8 @@ LZArena *lzarena_create(){
 }
 
 void lzarena_destroy(LZArena *arena){
+    if(!arena) return;
+    
     LZRegion *current = arena->head;
     
     while(current){
