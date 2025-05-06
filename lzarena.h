@@ -10,12 +10,14 @@
 #define LZARENA_BACKEND_MMAP 1
 #define LZARENA_BACKEND_VIRTUALALLOC 2
 
-#ifdef _WIN32
-    #define LZARENA_BACKEND LZARENA_BACKEND_VIRTUALALLOC
-#elif __linux__
-    #define LZARENA_BACKEND LZARENA_BACKEND_MMAP
-#else
-    #define LZARENA_BACKEND LZARENA_BACKEND_MALLOC
+#ifndef LZARENA_BACKEND
+    #ifdef _WIN32
+        #define LZARENA_BACKEND LZARENA_BACKEND_VIRTUALALLOC
+    #elif __linux__
+        #define LZARENA_BACKEND LZARENA_BACKEND_MMAP
+    #else
+        #define LZARENA_BACKEND LZARENA_BACKEND_MALLOC
+    #endif
 #endif
 
 typedef struct lzarena_allocator LZArenaAllocator;
