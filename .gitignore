@@ -1,0 +1,4 @@
+*
+!.gitignore
+!lzarena.c
+!lzarena.h

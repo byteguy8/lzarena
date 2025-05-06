@@ -13,26 +13,6 @@
     #include <sys/mman.h>
 #endif
 
-static void *lzalloc(size_t size, LZArenaAllocator *allocator){
-    return allocator ? allocator->alloc(size, allocator->ctx) : malloc(size);
-}
-
-static void *lzrealloc(void *ptr, size_t old_size, size_t new_size, LZArenaAllocator *allocator){
-    return allocator ? allocator->realloc(ptr, old_size, new_size, allocator->ctx) : realloc(ptr, new_size);
-}
-
-static void lzdealloc(void *ptr, size_t size, LZArenaAllocator *allocator){
-    if(!ptr){
-        return;
-    }
-
-    if(allocator){
-        allocator->dealloc(ptr, size, allocator->ctx);
-    }else{
-        free(ptr);
-    }
-}
-
 #ifdef _WIN32
     DWORD windows_page_size(){
         SYSTEM_INFO sysinfo;
@@ -52,25 +32,6 @@ static int is_power_of_two(uintptr_t x){
     return (x & (x - 1)) == 0;
 }
 
-static size_t align_size(size_t size, size_t alignment){
-    assert(is_power_of_two(alignment));
-
-    if (alignment == 0){
-        return size;
-    }
-
-    size_t module = size & (alignment - 1);
-    size_t padding = module == 0 ? 0 : alignment - module;
-
-    return padding + size;
-}
-
-static int is_aligned_to(void *buff, size_t alignment){
-    assert(is_power_of_two(alignment));
-    uintptr_t ibuff = (uintptr_t)buff;
-    return ibuff % alignment == 0;
-}
-
 static uintptr_t align_forward(uintptr_t addr, size_t alignment){
     assert(is_power_of_two(alignment));
 
@@ -78,6 +39,22 @@ static uintptr_t align_forward(uintptr_t addr, size_t alignment){
     size_t padding = module == 0 ? 0 : alignment - module;
 
     return padding + addr;
+}
+
+static void *lzalloc(size_t size, LZArenaAllocator *allocator){
+    return allocator ? allocator->alloc(size, allocator->ctx) : malloc(size);
+}
+
+static void lzdealloc(void *ptr, size_t size, LZArenaAllocator *allocator){
+    if(!ptr){
+        return;
+    }
+
+    if(allocator){
+        allocator->dealloc(ptr, size, allocator->ctx);
+    }else{
+        free(ptr);
+    }
 }
 
 static int append_region(size_t size, LZArena *arena){
@@ -108,7 +85,7 @@ static int append_region(size_t size, LZArena *arena){
         region = lzregion_create(buff_len);
     }
 
-    if(region == NULL){
+    if(!region){
         return 1;
     }
 
