@@ -14,7 +14,7 @@
 #endif
 
 #ifdef _WIN32
-    DWORD windows_page_size(){
+    static DWORD windows_page_size(){
         SYSTEM_INFO sysinfo;
         GetSystemInfo(&sysinfo);
         return sysinfo.dwPageSize;
