@@ -3,6 +3,9 @@
 
 #include <stddef.h>
 
+#define LZARENA_OK 0
+#define LZARENA_ERR_ALLOC 1
+
 #define LZARENA_DEFAULT_ALIGNMENT 8
 #define LZARENA_DEFAULT_FACTOR 1
 
@@ -42,6 +45,7 @@ struct lzregion{
 struct lzarena{
     LZRegion *head;
     LZRegion *tail;
+    LZRegion *current;
     LZArenaAllocator *allocator;
 };
 
@@ -62,6 +66,7 @@ void *lzregion_realloc_align(void *ptr, size_t old_size, size_t new_size, size_t
 LZArena *lzarena_create(LZArenaAllocator *allocator);
 void lzarena_destroy(LZArena *arena);
 
+#define LZARENA_OFFSET(_lzarena)((_lzarena)->current->offset)
 void lzarena_report(size_t *used, size_t *size, LZArena *arena);
 void lzarena_free_all(LZArena *arena);
 void *lzarena_alloc_align(size_t size, size_t alignment, LZArena *arena);
