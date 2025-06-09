@@ -108,6 +108,7 @@ LZRegion *lzregion_init(size_t buff_size, void *buffer){
     size_t chunk_len = (buff_end - chunk_start);
     LZRegion *region = (LZRegion *)region_start;
 
+    region->reset = 0;
     region->region_len = buff_size;
 	region->chunk_len = chunk_len;
     region->offset = (void *)chunk_start;
@@ -246,6 +247,7 @@ LZArena *lzarena_create(LZArenaAllocator *allocator){
         return NULL;
     }
 
+    arena->reset = 0;
     arena->head = NULL;
     arena->tail = NULL;
     arena->current = NULL;
@@ -295,16 +297,30 @@ void lzarena_report(size_t *used, size_t *size, LZArena *arena){
 }
 
 inline void lzarena_free_all(LZArena *arena){
-    for(LZRegion *current = arena->head; current; current = current->next){
-        LZREGION_FREE(current);
+    if(!arena->current){
+        return;
     }
 
-	arena->current = arena->head;
+    if(arena->head == arena->tail){
+        arena->current->offset = arena->current->chunk;
+    }else{
+        arena->reset++;
+        arena->current = arena->head;
+    }
 }
 
 void *lzarena_alloc_align(size_t size, size_t alignment, LZArena *arena){
-    while(arena->current && arena->current->next && lzregion_available_alignment(alignment, arena->current) < size){
-        arena->current = arena->current->next;
+    while(arena->current && arena->current->next){
+        if(arena->current->reset != arena->reset){
+            arena->current->reset = arena->reset;
+            arena->current->offset = arena->current->chunk;
+            break;
+        }else if(lzregion_available_alignment(alignment, arena->current) < size){
+            arena->current->reset = 0;
+            arena->current = arena->current->next;
+        }else{
+            break;
+        }
     }
 
     LZRegion *current = arena->current;

@@ -35,6 +35,7 @@ struct lzarena_allocator{
 };
 
 struct lzregion{
+    char reset;
     size_t region_len;
     size_t chunk_len;
     void *offset;
@@ -43,6 +44,7 @@ struct lzregion{
 };
 
 struct lzarena{
+    char reset;
     LZRegion *head;
     LZRegion *tail;
     LZRegion *current;
