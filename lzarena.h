@@ -4,14 +4,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define LZARENA_OK 0
+#define LZARENA_OK        0
 #define LZARENA_ERR_ALLOC 1
 
 #define LZARENA_DEFAULT_ALIGNMENT 16
-#define LZARENA_DEFAULT_FACTOR 1
+#define LZARENA_DEFAULT_FACTOR    1
 
-#define LZARENA_BACKEND_MALLOC 0
-#define LZARENA_BACKEND_MMAP 1
+#define LZARENA_BACKEND_MALLOC       0
+#define LZARENA_BACKEND_MMAP         1
 #define LZARENA_BACKEND_VIRTUALALLOC 2
 
 #ifndef LZARENA_BACKEND
@@ -24,10 +24,10 @@
     #endif
 #endif
 
-typedef uint64_t reset_t;
+typedef uint64_t                 reset_t;
 typedef struct lzarena_allocator LZArenaAllocator;
-typedef struct lzregion LZRegion;
-typedef struct lzarena LZArena;
+typedef struct lzregion          LZRegion;
+typedef struct lzarena           LZArena;
 
 struct lzarena_allocator{
     void *ctx;
@@ -37,20 +37,20 @@ struct lzarena_allocator{
 };
 
 struct lzregion{
-    reset_t reset;
-    size_t region_size;
-    size_t chunk_size;
-    void *chunk;
-    void *offset;
+    reset_t  reset;
+    size_t   region_size;
+    size_t   chunk_size;
+    void     *chunk;
+    void     *offset;
     LZRegion *next;
 };
 
 struct lzarena{
-    reset_t reset;
-    size_t allocted_bytes;
-    LZRegion *head;
-    LZRegion *tail;
-    LZRegion *current;
+    reset_t          reset;
+    size_t           allocted_bytes;
+    LZRegion         *head;
+    LZRegion         *tail;
+    LZRegion         *current;
     LZArenaAllocator *allocator;
 };
 
