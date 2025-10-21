@@ -287,6 +287,7 @@ LZArena *lzarena_create(LZArenaAllocator *allocator){
         return NULL;
     }
 
+    arena->reserved_memory = 0;
     arena->used_memory = 0;
     arena->regions.len = 0;
     arena->regions.head = NULL;
