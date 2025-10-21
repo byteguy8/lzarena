@@ -1,4 +1,5 @@
 #include "lzarena.h"
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -21,11 +22,16 @@ struct lzregion{
     LZArenaAllocator *allocator;
 };
 
+typedef struct region_list{
+	size_t   len;
+	LZRegion *head;
+	LZRegion *tail;
+}LZRegionList;
+
 struct lzarena{
 	size_t           reserved_memory;
     size_t           used_memory;
-    LZRegion         *head;
-    LZRegion         *tail;
+    LZRegionList       regions;
     LZRegion         *current;
     LZArenaAllocator *allocator;
 };
@@ -70,6 +76,19 @@ static inline void lzdealloc(void *ptr, size_t size, LZArenaAllocator *allocator
     }
 }
 
+static inline void lzregion_list_insert(LZRegionList *list, LZRegion *region){
+	LZRegion *tail = list->tail;
+
+	if(tail){
+		tail->next = region;
+	}else{
+		list->head = region;
+	}
+
+	list->len++;
+	list->tail = region;
+}
+
 static LZRegion *create_region(LZArenaAllocator *allocator, size_t requested_size){
     size_t page_size = (size_t)PAGE_SIZE;
     size_t needed_pages = requested_size / page_size;
@@ -87,14 +106,9 @@ static int append_region(LZArena *arena, size_t size){
         return LZARENA_ERR_ALLOC;
     }
 
-    if(arena->tail){
-        arena->tail->next = region;
-    }else{
-        arena->head = region;
-    }
+    lzregion_list_insert(&arena->regions, region);
 
     arena->reserved_memory += region->block_size;
-    arena->tail = region;
     arena->current = region;
 
     return LZARENA_OK;
@@ -274,8 +288,9 @@ LZArena *lzarena_create(LZArenaAllocator *allocator){
     }
 
     arena->used_memory = 0;
-    arena->head = NULL;
-    arena->tail = NULL;
+    arena->regions.len = 0;
+    arena->regions.head = NULL;
+    arena->regions.tail = NULL;
     arena->current = NULL;
     arena->allocator = allocator;
 
@@ -287,7 +302,7 @@ void lzarena_destroy(LZArena *arena){
         return;
     }
 
-    LZRegion *current = arena->head;
+    LZRegion *current = arena->regions.head;
 
     while(current){
 		LZRegion *next = current->next;
@@ -303,7 +318,7 @@ void lzarena_destroy(LZArena *arena){
 void lzarena_report(size_t *used, size_t *size, LZArena *arena){
     size_t u = 0;
     size_t s = 0;
-    LZRegion *current = arena->head;
+    LZRegion *current = arena->regions.head;
 
     while(current){
 		LZRegion *next = current->next;
@@ -322,7 +337,7 @@ inline int lzarena_append_region(size_t size, LZArena *arena){
 }
 
 inline void lzarena_free_all(LZArena *arena){
-    LZRegion *head = arena->head;
+    LZRegion *head = arena->regions.head;
 
     if(head){
 	    head->block_offset = head->block;
