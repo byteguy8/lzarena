@@ -84,8 +84,6 @@ static int append_region(size_t size, LZArena *arena){
         return LZARENA_ERR_ALLOC;
     }
 
-    region->reset = arena->reset;
-
     if(arena->tail){
         arena->tail->next = region;
     }else{
@@ -111,7 +109,6 @@ LZRegion *lzregion_init(size_t buff_size, void *buffer){
     size_t chunk_size = buff_end - chunk_start;
     LZRegion *region = (LZRegion *)region_start;
 
-    region->reset = 0;
     region->region_size = buff_size;
 	region->chunk_size = chunk_size;
     region->offset = (void *)chunk_start;
@@ -264,7 +261,6 @@ LZArena *lzarena_create(LZArenaAllocator *allocator){
         return NULL;
     }
 
-    arena->reset = 0;
     arena->allocted_bytes = 0;
     arena->head = NULL;
     arena->tail = NULL;
@@ -319,17 +315,12 @@ inline int lzarena_append_region(size_t size, LZArena *arena){
 }
 
 inline void lzarena_free_all(LZArena *arena){
-    if(!arena->current){
-        return;
-    }
+    LZRegion *head = arena->head;
 
-    arena->allocted_bytes = 0;
-
-    if(arena->head == arena->tail){
-        arena->current->offset = arena->current->chunk;
-    }else{
-        arena->reset++;
-        arena->current = arena->head;
+    if(head){
+	    head->offset = head->chunk;
+	    arena->allocted_bytes = 0;
+	    arena->current = head;
     }
 }
 
@@ -338,34 +329,40 @@ void *lzarena_alloc_align(size_t size, size_t alignment, LZArena *arena){
 
     while (arena->current){
         LZRegion *current = arena->current;
-        size_t arena_reset = arena->reset;
-        size_t current_reset = current->reset;
-
-        current->reset =
-            ((((reset_t) 0) - (current_reset < arena_reset)) & arena_reset) |
-            ((((reset_t) 0) - (current_reset == arena_reset)) & current_reset);
-
-        current->offset =
-            (void *)(((((uintptr_t)0) - (current_reset != arena_reset)) & ((uintptr_t)current->chunk)) |
-            ((((uintptr_t)0) - (current_reset == arena_reset)) & ((uintptr_t)current->offset)));
 
         if(lzregion_available_alignment(alignment, current) >= size){
             selected = current;
             break;
         }
 
-        arena->current = current->next;
+        LZRegion *next = current->next;
+
+        if(next){
+       		next->offset = next->chunk;
+        }
+
+        arena->current = next;
     }
 
     if(selected){
-        return lzregion_alloc_align(size, alignment, selected, &arena->allocted_bytes);
+        return lzregion_alloc_align(
+        	size,
+         	alignment,
+          	selected,
+           	&arena->allocted_bytes
+        );
     }
 
     if(append_region(size, arena)){
         return NULL;
     }
 
-    return lzregion_alloc_align(size, alignment, arena->current, &arena->allocted_bytes);
+    return lzregion_alloc_align(
+    	size,
+     	alignment,
+      	arena->current,
+       	&arena->allocted_bytes
+    );
 }
 
 void *lzarena_calloc_align(size_t size, size_t alignment, LZArena *arena){

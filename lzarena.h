@@ -24,7 +24,6 @@
     #endif
 #endif
 
-typedef uint64_t                 reset_t;
 typedef struct lzarena_allocator LZArenaAllocator;
 typedef struct lzregion          LZRegion;
 typedef struct lzarena           LZArena;
@@ -37,7 +36,6 @@ struct lzarena_allocator{
 };
 
 struct lzregion{
-    reset_t  reset;
     size_t   region_size;
     size_t   chunk_size;
     void     *chunk;
@@ -46,7 +44,6 @@ struct lzregion{
 };
 
 struct lzarena{
-    reset_t          reset;
     size_t           allocted_bytes;
     LZRegion         *head;
     LZRegion         *tail;
