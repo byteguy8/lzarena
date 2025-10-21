@@ -31,7 +31,7 @@ typedef struct lzregion_list{
 struct lzarena{
 	size_t           reserved_memory;
     size_t           used_memory;
-    LZRegionList       regions;
+    LZRegionList     regions;
     LZRegion         *current;
     LZArenaAllocator *allocator;
 };
