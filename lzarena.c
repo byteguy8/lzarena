@@ -22,7 +22,8 @@ struct lzregion{
 };
 
 struct lzarena{
-    size_t           allocted_bytes;
+	size_t           reserved_memory;
+    size_t           used_memory;
     LZRegion         *head;
     LZRegion         *tail;
     LZRegion         *current;
@@ -92,6 +93,7 @@ static int append_region(LZArena *arena, size_t size){
         arena->head = region;
     }
 
+    arena->reserved_memory += region->block_size;
     arena->tail = region;
     arena->current = region;
 
@@ -271,7 +273,7 @@ LZArena *lzarena_create(LZArenaAllocator *allocator){
         return NULL;
     }
 
-    arena->allocted_bytes = 0;
+    arena->used_memory = 0;
     arena->head = NULL;
     arena->tail = NULL;
     arena->current = NULL;
@@ -324,7 +326,7 @@ inline void lzarena_free_all(LZArena *arena){
 
     if(head){
 	    head->block_offset = head->block;
-	    arena->allocted_bytes = 0;
+	    arena->used_memory = 0;
 	    arena->current = head;
     }
 }
@@ -354,7 +356,7 @@ void *lzarena_alloc_align(size_t size, size_t alignment, LZArena *arena){
         	size,
          	alignment,
           	selected,
-           	&arena->allocted_bytes
+           	&arena->used_memory
         );
     }
 
@@ -366,7 +368,7 @@ void *lzarena_alloc_align(size_t size, size_t alignment, LZArena *arena){
     	size,
      	alignment,
       	arena->current,
-       	&arena->allocted_bytes
+       	&arena->used_memory
     );
 }
 
