@@ -22,7 +22,7 @@ struct lzregion{
     LZArenaAllocator *allocator;
 };
 
-typedef struct region_list{
+typedef struct lzregion_list{
 	size_t   len;
 	LZRegion *head;
 	LZRegion *tail;
