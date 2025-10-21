@@ -35,13 +35,14 @@ struct lzarena_allocator{
     void (*dealloc)(void *ptr, size_t size, void *ctx);
 };
 
-LZRegion *lzregion_init(size_t buff_size, void *buff);
-LZRegion *lzregion_create(size_t size);
+LZRegion *lzregion_init(
+	LZRegion *region,
+	size_t block_size,
+	void *block,
+	LZArenaAllocator *allocator
+);
+LZRegion *lzregion_create(size_t block_size, LZArenaAllocator *allocator);
 void lzregion_destroy(LZRegion *region);
-
-#define LZREGION_FREE(region){       \
-    region->offset = region->chunk;  \
-}
 
 size_t lzregion_available(LZRegion *region);
 size_t lzregion_available_alignment(size_t alignment, LZRegion *region);
