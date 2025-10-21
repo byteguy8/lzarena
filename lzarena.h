@@ -35,22 +35,6 @@ struct lzarena_allocator{
     void (*dealloc)(void *ptr, size_t size, void *ctx);
 };
 
-struct lzregion{
-    size_t   region_size;
-    size_t   chunk_size;
-    void     *chunk;
-    void     *offset;
-    LZRegion *next;
-};
-
-struct lzarena{
-    size_t           allocted_bytes;
-    LZRegion         *head;
-    LZRegion         *tail;
-    LZRegion         *current;
-    LZArenaAllocator *allocator;
-};
-
 LZRegion *lzregion_init(size_t buff_size, void *buff);
 LZRegion *lzregion_create(size_t size);
 void lzregion_destroy(LZRegion *region);
@@ -79,7 +63,6 @@ void *lzregion_realloc_align(
 LZArena *lzarena_create(LZArenaAllocator *allocator);
 void lzarena_destroy(LZArena *arena);
 
-#define LZARENA_OFFSET(_lzarena)((_lzarena)->current->offset)
 void lzarena_report(size_t *used, size_t *size, LZArena *arena);
 int lzarena_append_region(size_t size, LZArena *arena);
 void lzarena_free_all(LZArena *arena);
@@ -96,6 +79,7 @@ void *lzarena_realloc_align(
 
 #define LZARENA_ALLOC(_size, _arena) \
     (lzarena_alloc_align(_size, LZARENA_DEFAULT_ALIGNMENT, _arena))
+
 #define LZARENA_REALLOC(_ptr, _old_size, _new_size, _arena) \
  (lzarena_realloc_align(_ptr, _old_size, _new_size, LZARENA_DEFAULT_ALIGNMENT, _arena))
 

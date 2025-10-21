@@ -13,6 +13,22 @@
     #include <sys/mman.h>
 #endif
 
+struct lzregion{
+    size_t   region_size;
+    size_t   chunk_size;
+    void     *chunk;
+    void     *offset;
+    LZRegion *next;
+};
+
+struct lzarena{
+    size_t           allocted_bytes;
+    LZRegion         *head;
+    LZRegion         *tail;
+    LZRegion         *current;
+    LZArenaAllocator *allocator;
+};
+
 #ifdef _WIN32
     static DWORD windows_page_size(){
         SYSTEM_INFO sysinfo;
