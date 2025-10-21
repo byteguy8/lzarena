@@ -41,47 +41,47 @@ LZRegion *lzregion_init(
 	void *block,
 	LZArenaAllocator *allocator
 );
-LZRegion *lzregion_create(size_t block_size, LZArenaAllocator *allocator);
+LZRegion *lzregion_create(LZArenaAllocator *allocator, size_t block_size);
 void lzregion_destroy(LZRegion *region);
 
 size_t lzregion_available(LZRegion *region);
-size_t lzregion_available_alignment(size_t alignment, LZRegion *region);
+size_t lzregion_available_alignment(LZRegion *region, size_t alignment);
 void *lzregion_alloc_align(
-	size_t size,
-	size_t alignment,
 	LZRegion *region,
+	size_t alignment,
+	size_t size,
 	size_t *out_bytes
 );
-void *lzregion_calloc_align(size_t size, size_t alignment, LZRegion *region);
+void *lzregion_calloc_align(LZRegion *region, size_t alignment, size_t size);
 void *lzregion_realloc_align(
+	LZRegion *region,
 	void *ptr,
 	size_t old_size,
-	size_t new_size,
 	size_t alignment,
-	LZRegion *region
+	size_t new_size
 );
 
 LZArena *lzarena_create(LZArenaAllocator *allocator);
 void lzarena_destroy(LZArena *arena);
 
-void lzarena_report(size_t *used, size_t *size, LZArena *arena);
-int lzarena_append_region(size_t size, LZArena *arena);
+void lzarena_report(LZArena *arena, size_t *used, size_t *size);
+int lzarena_append_region(LZArena *arena, size_t size);
 void lzarena_free_all(LZArena *arena);
 
-void *lzarena_alloc_align(size_t size, size_t alignment, LZArena *arena);
-void *lzarena_calloc_align(size_t size, size_t alignment, LZArena *arena);
+void *lzarena_alloc_align(LZArena *arena, size_t alignment, size_t size);
+void *lzarena_calloc_align(LZArena *arena, size_t alignment, size_t size);
 void *lzarena_realloc_align(
+	LZArena *arena,
 	void *ptr,
 	size_t old_size,
-	size_t new_size,
 	size_t alignment,
-	LZArena *arena
+	size_t new_size
 );
 
-#define LZARENA_ALLOC(_size, _arena) \
-    (lzarena_alloc_align(_size, LZARENA_DEFAULT_ALIGNMENT, _arena))
+#define LZARENA_ALLOC(_arena, _size) \
+	(lzarena_alloc_align(_arena, LZARENA_DEFAULT_ALIGNMENT, _size))
 
-#define LZARENA_REALLOC(_ptr, _old_size, _new_size, _arena) \
- (lzarena_realloc_align(_ptr, _old_size, _new_size, LZARENA_DEFAULT_ALIGNMENT, _arena))
+#define LZARENA_REALLOC(_arena, _ptr, _old_size, _new_size) \
+	(lzarena_realloc_align(_arena, _ptr, _old_size, LZARENA_DEFAULT_ALIGNMENT, _new_size))
 
 #endif

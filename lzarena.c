@@ -96,7 +96,7 @@ static LZRegion *create_region(LZArenaAllocator *allocator, size_t requested_siz
     size_t block_size = ((((size_t) 0) - (pre_needed_size >= requested_size)) & pre_needed_size) |
         				((((size_t) 0) - (pre_needed_size < requested_size)) & ((needed_pages + 1) * page_size));
 
-    return lzregion_create(block_size, allocator);
+    return lzregion_create(allocator, block_size);
 }
 
 static int append_region(LZArena *arena, size_t size){
@@ -129,7 +129,7 @@ LZRegion *lzregion_init(
     return region;
 }
 
-LZRegion *lzregion_create(size_t block_size, LZArenaAllocator *allocator){
+LZRegion *lzregion_create(LZArenaAllocator *allocator, size_t block_size){
 #ifndef LZARENA_BACKEND
     #error "A backend must be defined"
 #endif
@@ -215,7 +215,7 @@ size_t lzregion_available(LZRegion *region){
     return offset >= chunk_end ? 0 : chunk_end - offset;
 }
 
-size_t lzregion_available_alignment(size_t alignment, LZRegion *region){
+size_t lzregion_available_alignment(LZRegion *region, size_t alignment){
     uintptr_t chunk_start = (uintptr_t)region->block;
     uintptr_t chunk_end = chunk_start + region->block_size;
     uintptr_t offset = (uintptr_t)region->block_offset;
@@ -225,7 +225,12 @@ size_t lzregion_available_alignment(size_t alignment, LZRegion *region){
     return offset >= chunk_end ? 0 : chunk_end - offset;
 }
 
-void *lzregion_alloc_align(size_t size, size_t alignment, LZRegion *region, size_t *out_bytes){
+void *lzregion_alloc_align(
+	LZRegion *region,
+	size_t alignment,
+	size_t size,
+	size_t *out_bytes
+){
     if(size == 0){
         return NULL;
     }
@@ -248,8 +253,8 @@ void *lzregion_alloc_align(size_t size, size_t alignment, LZRegion *region, size
     return (void *)chunk_start;
 }
 
-void *lzregion_calloc_align(size_t size, size_t alignment, LZRegion *region){
-    void *ptr = lzregion_alloc_align(size, alignment, region, NULL);
+void *lzregion_calloc_align(LZRegion *region, size_t alignment, size_t size){
+    void *ptr = lzregion_alloc_align(region, alignment, size, NULL);
 
     if(ptr){
         memset(ptr, 0, size);
@@ -258,9 +263,15 @@ void *lzregion_calloc_align(size_t size, size_t alignment, LZRegion *region){
     return ptr;
 }
 
-void *lzregion_realloc_align(void *ptr, size_t old_size, size_t new_size, size_t alignment, LZRegion *region){
+void *lzregion_realloc_align(
+	LZRegion *region,
+	void *ptr,
+	size_t old_size,
+	size_t alignment,
+	size_t new_size
+){
     if(!ptr){
-        return lzregion_alloc_align(new_size, alignment, region, NULL);
+        return lzregion_alloc_align(region, alignment, new_size, NULL);
     }
 
     if(new_size == 0){
@@ -271,7 +282,7 @@ void *lzregion_realloc_align(void *ptr, size_t old_size, size_t new_size, size_t
         return ptr;
     }
 
-	void *new_ptr = lzregion_alloc_align(new_size, alignment, region, NULL);
+	void *new_ptr = lzregion_alloc_align(region, alignment, new_size, NULL);
 
 	if(new_ptr){
         memcpy(new_ptr, ptr, old_size);
@@ -316,7 +327,7 @@ void lzarena_destroy(LZArena *arena){
     lzdealloc(arena, ARENA_SIZE, arena->allocator);
 }
 
-void lzarena_report(size_t *used, size_t *size, LZArena *arena){
+void lzarena_report(LZArena *arena, size_t *used, size_t *size){
     size_t u = 0;
     size_t s = 0;
     LZRegion *current = arena->regions.head;
@@ -333,7 +344,7 @@ void lzarena_report(size_t *used, size_t *size, LZArena *arena){
 	*size = s;
 }
 
-inline int lzarena_append_region(size_t size, LZArena *arena){
+inline int lzarena_append_region(LZArena *arena, size_t size){
     return append_region(arena, size);
 }
 
@@ -347,13 +358,13 @@ inline void lzarena_free_all(LZArena *arena){
     }
 }
 
-void *lzarena_alloc_align(size_t size, size_t alignment, LZArena *arena){
+void *lzarena_alloc_align(LZArena *arena, size_t alignment, size_t size){
     LZRegion *selected = NULL;
 
     while (arena->current){
         LZRegion *current = arena->current;
 
-        if(lzregion_available_alignment(alignment, current) >= size){
+        if(lzregion_available_alignment(current, alignment) >= size){
             selected = current;
             break;
         }
@@ -369,9 +380,9 @@ void *lzarena_alloc_align(size_t size, size_t alignment, LZArena *arena){
 
     if(selected){
         return lzregion_alloc_align(
-        	size,
+        	selected,
          	alignment,
-          	selected,
+        	size,
            	&arena->used_memory
         );
     }
@@ -381,15 +392,15 @@ void *lzarena_alloc_align(size_t size, size_t alignment, LZArena *arena){
     }
 
     return lzregion_alloc_align(
-    	size,
+    	arena->current,
      	alignment,
-      	arena->current,
+    	size,
        	&arena->used_memory
     );
 }
 
-void *lzarena_calloc_align(size_t size, size_t alignment, LZArena *arena){
-    void *ptr = lzarena_alloc_align(size, alignment, arena);
+void *lzarena_calloc_align(LZArena *arena, size_t alignment, size_t size){
+    void *ptr = lzarena_alloc_align(arena, alignment, size);
 
     if(ptr){
         memset(ptr, 0, size);
@@ -398,16 +409,22 @@ void *lzarena_calloc_align(size_t size, size_t alignment, LZArena *arena){
     return ptr;
 }
 
-void *lzarena_realloc_align(void *ptr, size_t old_size, size_t new_size, size_t alignment, LZArena *arena){
+void *lzarena_realloc_align(
+	LZArena *arena,
+	void *ptr,
+	size_t old_size,
+	size_t alignment,
+	size_t new_size
+){
     if(!ptr){
-        return lzarena_alloc_align(new_size, alignment, arena);
+        return lzarena_alloc_align(arena, alignment, new_size);
     }
 
     if(new_size <= old_size){
         return ptr;
     }
 
-	void *new_ptr = lzarena_alloc_align(new_size, alignment, arena);
+	void *new_ptr = lzarena_alloc_align(arena, alignment, new_size);
 
 	if(new_ptr){
         memcpy(new_ptr, ptr, old_size);
