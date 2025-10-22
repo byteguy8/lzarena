@@ -396,7 +396,7 @@ void *lzarena_alloc_align(LZArena *arena, size_t alignment, size_t size){
         );
     }
 
-    if(append_region(arena, size)){
+    if(size == 0 || append_region(arena, size)){
         return NULL;
     }
 
