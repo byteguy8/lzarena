@@ -4,8 +4,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define LZARENA_OK        0
-#define LZARENA_ERR_ALLOC 1
+#define LZARENA_OK                0
+#define LZARENA_ERR_ALLOC         1
+#define LZARENA_ERR_ILLEGAL_STATE 2
+#define LZARENA_ERR_WRONG_STATE   3
 
 #define LZARENA_DEFAULT_ALIGNMENT 16
 #define LZARENA_DEFAULT_FACTOR    1
@@ -27,6 +29,10 @@
 typedef struct lzarena_allocator LZArenaAllocator;
 typedef struct lzregion          LZRegion;
 typedef struct lzarena           LZArena;
+
+#define LZARENA_OK           0
+#define LZARENA_ERR_ALLOC    1
+#define LZARENA_ERR_NO_STATE 2
 
 struct lzarena_allocator{
     void *ctx;
@@ -65,6 +71,11 @@ LZArena *lzarena_create(LZArenaAllocator *allocator);
 void lzarena_destroy(LZArena *arena);
 
 void lzarena_report(LZArena *arena, size_t *used, size_t *size);
+
+size_t lzarena_state_size();
+int lzarena_save(LZArena *arena, void *state);
+int lzarena_restore(LZArena *arena, void *state);
+
 int lzarena_append_region(LZArena *arena, size_t size);
 void lzarena_free_all(LZArena *arena);
 size_t lzarena_reserved_memory(const LZArena *arena);

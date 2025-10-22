@@ -1,4 +1,6 @@
 #include "lzarena.h"
+#include <bits/stdint-intn.h>
+#include <bits/stdint-uintn.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +15,16 @@
     #include <unistd.h>
     #include <sys/mman.h>
 #endif
+
+#define MAGIC_NUMBER 0xdeadbeef
+
+typedef struct lzarena_state{
+	uint32_t magic_number;
+	uint64_t id;
+	size_t   used_memory;
+	void     *block_offset;
+	LZRegion *region;
+}LZArenaState;
 
 struct lzregion{
     size_t           block_size;
@@ -29,6 +41,8 @@ typedef struct lzregion_list{
 }LZRegionList;
 
 struct lzarena{
+	uint64_t         states_counter;
+	uint64_t         last_restored;
 	size_t           reserved_memory;
     size_t           used_memory;
     LZRegionList     regions;
@@ -299,6 +313,8 @@ LZArena *lzarena_create(LZArenaAllocator *allocator){
         return NULL;
     }
 
+    arena->states_counter = 0;
+    arena->last_restored = 0;
     arena->reserved_memory = 0;
     arena->used_memory = 0;
     arena->regions.len = 0;
@@ -345,6 +361,51 @@ void lzarena_report(LZArena *arena, size_t *used, size_t *size){
 	*size = s;
 }
 
+inline size_t lzarena_state_size(){
+	return sizeof(LZArenaState);
+}
+
+int lzarena_save(LZArena *arena, void *bookmark){
+	LZRegion *current = arena->current;
+
+	if(!current){
+		return LZARENA_ERR_NO_STATE;
+	}
+
+	LZArenaState new_state = {
+		.magic_number = 0xdeadbeef,
+		.id = arena->states_counter += 1,
+		.used_memory = arena->used_memory,
+		.block_offset = current->block_offset,
+		.region = current
+	};
+
+	memcpy(bookmark, &new_state, sizeof(LZArenaState));
+
+	return LZARENA_OK;
+}
+
+int lzarena_restore(LZArena *arena, void *state){
+	LZArenaState old_state = *(LZArenaState *)state;
+
+	if(old_state.magic_number != MAGIC_NUMBER){
+		return LZARENA_ERR_ILLEGAL_STATE;
+	}
+
+	uint64_t last_restored = arena->last_restored;
+
+	if(last_restored > 0 && old_state.id > last_restored){
+		return LZARENA_ERR_WRONG_STATE;
+	}
+
+	old_state.region->block_offset = old_state.block_offset;
+	arena->last_restored = old_state.id;
+	arena->used_memory = old_state.used_memory;
+	arena->current = old_state.region;
+
+	return LZARENA_OK;
+}
+
 inline int lzarena_append_region(LZArena *arena, size_t size){
     return append_region(arena, size);
 }
@@ -354,6 +415,8 @@ inline void lzarena_free_all(LZArena *arena){
 
     if(head){
 	    head->block_offset = head->block;
+		arena->states_counter = 0;
+		arena->last_restored = 0;
 	    arena->used_memory = 0;
 	    arena->current = head;
     }
