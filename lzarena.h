@@ -70,14 +70,15 @@ void *lzregion_realloc_align(
 LZArena *lzarena_create(LZArenaAllocator *allocator);
 void lzarena_destroy(LZArena *arena);
 
-size_t lzarena_state_size();
-int lzarena_save(LZArena *arena, void *state);
-int lzarena_restore(LZArena *arena, void *state);
+size_t lzarena_reserved_memory(const LZArena *arena);
+size_t lzarena_used_memory(const LZArena *arena);
 
 int lzarena_append_region(LZArena *arena, size_t size);
 void lzarena_free_all(LZArena *arena);
-size_t lzarena_reserved_memory(const LZArena *arena);
-size_t lzarena_used_memory(const LZArena *arena);
+
+size_t lzarena_state_size();
+int lzarena_save(LZArena *arena, void *state);
+int lzarena_restore(LZArena *arena, void *state);
 
 void *lzarena_alloc_align(LZArena *arena, size_t alignment, size_t size);
 void *lzarena_calloc_align(LZArena *arena, size_t alignment, size_t size);
