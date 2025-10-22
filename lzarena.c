@@ -57,9 +57,9 @@ struct lzarena{
         return sysinfo.dwPageSize;
     }
 
-    #define PAGE_SIZE windows_page_size()
+    #define PAGE_SIZE() windows_page_size()
 #elif __linux__
-    #define PAGE_SIZE sysconf(_SC_PAGESIZE)
+    #define PAGE_SIZE() sysconf(_SC_PAGESIZE)
 #endif
 
 #define REGION_SIZE (sizeof(LZRegion))
@@ -104,7 +104,7 @@ static inline void lzregion_list_insert(LZRegionList *list, LZRegion *region){
 }
 
 static LZRegion *create_region(LZArenaAllocator *allocator, size_t requested_size){
-    size_t page_size = (size_t)PAGE_SIZE;
+    size_t page_size = (size_t)PAGE_SIZE();
     size_t needed_pages = requested_size / page_size;
     size_t pre_needed_size = needed_pages * page_size;
     size_t block_size = ((((size_t) 0) - (pre_needed_size >= requested_size)) & pre_needed_size) |
