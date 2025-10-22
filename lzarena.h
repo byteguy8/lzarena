@@ -70,8 +70,6 @@ void *lzregion_realloc_align(
 LZArena *lzarena_create(LZArenaAllocator *allocator);
 void lzarena_destroy(LZArena *arena);
 
-void lzarena_report(LZArena *arena, size_t *used, size_t *size);
-
 size_t lzarena_state_size();
 int lzarena_save(LZArena *arena, void *state);
 int lzarena_restore(LZArena *arena, void *state);

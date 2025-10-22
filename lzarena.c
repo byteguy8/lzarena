@@ -344,23 +344,6 @@ void lzarena_destroy(LZArena *arena){
     lzdealloc(arena, ARENA_SIZE, arena->allocator);
 }
 
-void lzarena_report(LZArena *arena, size_t *used, size_t *size){
-    size_t u = 0;
-    size_t s = 0;
-    LZRegion *current = arena->regions.head;
-
-    while(current){
-		LZRegion *next = current->next;
-		size_t available = lzregion_available(current);
-		u += current->block_size - available;
-		s += current->block_size;
-		current = next;
-	}
-
-	*used = u;
-	*size = s;
-}
-
 inline size_t lzarena_state_size(){
 	return sizeof(LZArenaState);
 }
