@@ -67,6 +67,8 @@ void lzarena_destroy(LZArena *arena);
 void lzarena_report(LZArena *arena, size_t *used, size_t *size);
 int lzarena_append_region(LZArena *arena, size_t size);
 void lzarena_free_all(LZArena *arena);
+size_t lzarena_reserved_memory(const LZArena *arena);
+size_t lzarena_used_memory(const LZArena *arena);
 
 void *lzarena_alloc_align(LZArena *arena, size_t alignment, size_t size);
 void *lzarena_calloc_align(LZArena *arena, size_t alignment, size_t size);

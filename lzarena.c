@@ -358,6 +358,14 @@ inline void lzarena_free_all(LZArena *arena){
     }
 }
 
+inline size_t lzarena_reserved_memory(const LZArena *arena){
+	return arena->reserved_memory;
+}
+
+inline size_t lzarena_used_memory(const LZArena *arena){
+	return arena->used_memory;
+}
+
 void *lzarena_alloc_align(LZArena *arena, size_t alignment, size_t size){
     LZRegion *selected = NULL;
 
