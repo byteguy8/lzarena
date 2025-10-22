@@ -58,7 +58,7 @@ static inline int is_power_of_two(uintptr_t x){
 static inline uintptr_t align_forward(uintptr_t addr, size_t alignment){
     assert(is_power_of_two(alignment));
 
-    size_t module = addr & (alignment - 1);;
+    size_t module = addr & (alignment - 1);
     size_t padding = module == 0 ? 0 : alignment - module;
 
     return addr + padding;
@@ -237,7 +237,8 @@ void *lzregion_alloc_align(
 
     uintptr_t old_block_offset = (uintptr_t)region->block_offset;
     uintptr_t block_end = old_block_offset + region->block_size;
-    uintptr_t chunk_start = align_forward(old_block_offset, alignment);
+    uintptr_t chunk_start = alignment == 0 ? old_block_offset :
+        					align_forward(old_block_offset, alignment);
     uintptr_t chunk_end = chunk_start + size;
 
     if(chunk_end > block_end){
